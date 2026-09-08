@@ -307,10 +307,9 @@
         let reservePools = { lumin: 30, nox: 30 };
         let isAiTurn = false;
 
-        // Use pointerdown for instant mobile responsiveness
         document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
         document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
-        document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); rollActionDie(); });
+        document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); handlePlayerRoll(); });
 
         function startGame(faction) {
             playerFaction = faction;
@@ -321,8 +320,9 @@
             renderBoard();
             updateUI();
 
+            // If player chose Nox, AI is Lumin and needs to take the first turn
             if (currentTurn !== playerFaction) {
-                triggerAITurn();
+                runAITurn();
             }
         }
 
@@ -366,10 +366,13 @@
             }
         }
 
-        function rollActionDie() {
-            if (hasRolledThisTurn) return;
-            if (isAiTurn && currentTurn !== playerFaction) return;
+        function handlePlayerRoll() {
+            if (hasRolledThisTurn || isAiTurn) return;
+            if (currentTurn !== playerFaction) return;
+            executeRoll();
+        }
 
+        function executeRoll() {
             const diceView = document.getElementById('dice-view');
             diceView.textContent = '...';
 
@@ -464,15 +467,26 @@
             updateUI();
 
             if (currentTurn !== playerFaction) {
-                triggerAITurn();
+                runAITurn();
             }
         }
 
-        function triggerAITurn() {
+        function runAITurn() {
             isAiTurn = true;
             setTimeout(() => {
-                rollActionDie();
-            }, 600);
+                const diceView = document.getElementById('dice-view');
+                diceView.textContent = '...';
+
+                setTimeout(() => {
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    diceView.textContent = roll;
+                    placementsRemaining = roll;
+                    hasRolledThisTurn = true;
+                    updateUI();
+
+                    executeAIPlacements();
+                }, 400);
+            }, 500);
         }
 
         function executeAIPlacements() {
