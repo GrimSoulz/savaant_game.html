@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Savaant - A Solaris Tactical Game</title>
     <style>
         :root {
@@ -23,105 +23,114 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            touch-action: manipulation;
         }
 
         h1 {
             margin: 5px 0;
             letter-spacing: 2px;
             color: #dcdde1;
+            font-size: 1.5rem;
         }
 
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            text-align: center;
         }
 
         /* Setup Screen */
         #setup-screen {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            padding: 30px;
+            padding: 20px;
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            max-width: 400px;
-            margin-top: 50px;
+            max-width: 350px;
+            margin-top: 30px;
         }
 
         .btn {
             background-color: #353b48;
             color: white;
             border: 1px solid var(--border-color);
-            padding: 10px 20px;
-            margin: 10px;
+            padding: 12px 20px;
+            margin: 10px 0;
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
+            width: 100%;
             transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn:hover {
+        .btn:active {
             background-color: #487eb0;
         }
 
         .faction-btn {
             font-weight: bold;
-            padding: 12px 24px;
         }
 
         /* Game Container */
         #game-container {
             display: none;
-            flex-direction: row;
-            gap: 20px;
-            max-width: 1200px;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+            align-items: center;
         }
 
         .sidebar {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
-            width: 280px;
+            width: 100%;
+            box-sizing: border-box;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         .sidebar h3 {
-            margin-top: 0;
+            margin: 0 0 8px 0;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
+            padding-bottom: 5px;
+            font-size: 1rem;
         }
 
         .status-box {
             background: #111317;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-left: 4px solid var(--lumin-accent);
+            font-size: 0.9rem;
         }
 
         /* Board Styling */
         #board-wrapper {
             background: var(--panel-bg);
             border: 2px solid var(--border-color);
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            display: inline-block;
+            overflow-x: auto;
+            max-width: 100%;
         }
 
         #grid {
             display: grid;
-            grid-template-columns: repeat(20, 28px);
-            grid-template-rows: repeat(20, 28px);
+            grid-template-columns: repeat(20, 24px);
+            grid-template-rows: repeat(20, 24px);
             gap: 1px;
             background-color: #2f3640;
             border: 1px solid #2f3640;
@@ -129,18 +138,14 @@
 
         .cell {
             background-color: #1a1d23;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             position: relative;
-            transition: background-color 0.1s;
-        }
-
-        .cell:hover:not(.collapsed):not(.occupied) {
-            background-color: #2c313a;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .cell.collapsed {
@@ -151,21 +156,15 @@
 
         /* Stones */
         .stone {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
         }
 
         .stone.lumin {
@@ -181,52 +180,38 @@
         }
 
         .grey-marker {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             background-color: var(--collapse-color);
             border-radius: 3px;
         }
 
-        /* Controls & Dice */
         .dice-display {
-            font-size: 2.5rem;
+            font-size: 2rem;
             text-align: center;
             background: #111317;
             border-radius: 6px;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 8px;
+            margin: 8px 0;
             border: 1px dashed var(--border-color);
             letter-spacing: 5px;
         }
 
-        .dice-display.rolling {
-            animation: shake 0.3s infinite;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            20% { transform: translate(-1px, -2px) rotate(-1deg); }
-            40% { transform: translate(-3px, 0px) rotate(1deg); }
-            60% { transform: translate(3px, 2px) rotate(0deg); }
-            80% { transform: translate(1px, -1px) rotate(1deg); }
-            100% { transform: translate(-1px, 2px) rotate(-1deg); }
-        }
-
         .captured-list {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             flex-wrap: wrap;
-            max-height: 80px;
+            max-height: 50px;
             overflow-y: auto;
             background: #111317;
-            padding: 8px;
+            padding: 6px;
             border-radius: 4px;
-            margin-top: 5px;
+            margin-top: 3px;
         }
 
         .mini-stone {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             display: inline-block;
         }
@@ -244,10 +229,11 @@
         }
         .modal-content {
             background: var(--panel-bg);
-            padding: 40px;
+            padding: 30px;
             border-radius: 8px;
             text-align: center;
             border: 1px solid var(--border-color);
+            max-width: 80%;
         }
     </style>
 </head>
@@ -259,9 +245,9 @@
     <!-- Setup Screen -->
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button class="btn faction-btn" onclick="startGame('lumin')">Play as Lumin</button>
-        <button class="btn faction-btn" onclick="startGame('nox')">Play as Nox</button>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
+        <button class="btn faction-btn" id="btn-lumin">Play as Lumin</button>
+        <button class="btn faction-btn" id="btn-nox">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -271,22 +257,21 @@
             <h3>Match Status</h3>
             <div id="status-box" class="status-box">
                 <strong>Turn:</strong> <span id="current-turn-text">Lumin's Turn</span><br>
-                <strong>Round:</strong> <span id="round-num">1</span> / <span id="max-rounds">9</span><br>
+                <strong>Round:</strong> <span id="round-num">1</span> / 9<br>
                 <strong>Placements Left:</strong> <span id="placements-left">0</span>
             </div>
 
             <div class="dice-section">
                 <h3>Action Die</h3>
                 <div id="dice-view" class="dice-display">🎲</div>
-                <button id="roll-btn" class="btn" style="width: 100%; margin: 0;" onclick="rollActionDie()">Roll D6</button>
+                <button id="roll-btn" class="btn">Roll D6</button>
             </div>
 
-            <div style="margin-top: 20px;">
-                <h3>Captured Scores</h3>
-                <p><strong>Lumin Captures:</strong> <span id="lumin-score">0</span></p>
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                <strong>Lumin Captures:</strong> <span id="lumin-score">0</span>
                 <div id="lumin-captured" class="captured-list"></div>
                 
-                <p style="margin-top: 10px;"><strong>Nox Captures:</strong> <span id="nox-score">0</span></p>
+                <strong style="display:block; margin-top:5px;">Nox Captures:</strong> <span id="nox-score">0</span>
                 <div id="nox-captured" class="captured-list"></div>
             </div>
         </div>
@@ -308,19 +293,24 @@
 
     <script>
         const GRID_SIZE = 20;
-        let boardState = []; // 20x20 matrix: null, 'lumin', 'nox', or 'collapsed'
+        let boardState = [];
         let playerFaction = 'lumin';
-        let currentTurn = 'lumin'; // 'lumin' or 'nox'
+        let currentTurn = 'lumin';
         let roundNumber = 1;
-        let turnInRound = 1; // 1 to 6 (3 per player)
+        let turnInRound = 1;
         let placementsRemaining = 0;
         let hasRolledThisTurn = false;
-        let collapseRadius = 0; // Number of outer layers collapsed
+        let collapseRadius = 0;
         
         let scores = { lumin: 0, nox: 0 };
         let capturedPools = { lumin: [], nox: [] };
         let reservePools = { lumin: 30, nox: 30 };
         let isAiTurn = false;
+
+        // Use pointerdown for instant mobile responsiveness
+        document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
+        document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
+        document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); rollActionDie(); });
 
         function startGame(faction) {
             playerFaction = faction;
@@ -348,8 +338,6 @@
                 for (let c = 0; c < GRID_SIZE; c++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
 
                     const cellVal = boardState[r][c];
 
@@ -365,7 +353,12 @@
                         stone.textContent = cellVal === 'lumin' ? 'O' : 'X';
                         cell.appendChild(stone);
                     } else {
-                        cell.addEventListener('click', () => handleCellClick(r, c));
+                        const rowIdx = r;
+                        const colIdx = c;
+                        cell.addEventListener('pointerdown', (e) => {
+                            e.preventDefault();
+                            handleCellClick(rowIdx, colIdx);
+                        });
                     }
 
                     gridEl.appendChild(cell);
@@ -378,22 +371,19 @@
             if (isAiTurn && currentTurn !== playerFaction) return;
 
             const diceView = document.getElementById('dice-view');
-            diceView.classList.add('rolling');
-            document.getElementById('roll-btn').disabled = true;
+            diceView.textContent = '...';
 
             setTimeout(() => {
-                diceView.classList.remove('rolling');
                 const roll = Math.floor(Math.random() * 6) + 1;
                 diceView.textContent = roll;
                 placementsRemaining = roll;
                 hasRolledThisTurn = true;
                 updateUI();
 
-                // If AI turn and rolled, execute AI placements
                 if (currentTurn !== playerFaction) {
                     executeAIPlacements();
                 }
-            }, 500);
+            }, 300);
         }
 
         function handleCellClick(r, c) {
@@ -403,30 +393,23 @@
                 return;
             }
 
-            if (boardState[r][c] !== null) {
-                return; // Already occupied or collapsed
-            }
+            if (boardState[r][c] !== null) return;
 
             placeStone(r, c, playerFaction);
         }
 
         function placeStone(r, c, faction) {
-            if (reservePools[faction] <= 0) {
-                alert(`${faction} has no stones left in reserve!`);
-                return;
-            }
+            if (reservePools[faction] <= 0) return;
 
             reservePools[faction]--;
             boardState[r][c] = faction;
             placementsRemaining--;
 
-            // Check sandwiches / captures
             checkCaptures(r, c, faction);
 
             renderBoard();
             updateUI();
 
-            // Check if turn ends
             if (placementsRemaining <= 0) {
                 endTurn();
             }
@@ -435,24 +418,19 @@
         function checkCaptures(r, c, faction) {
             const opponent = faction === 'lumin' ? 'nox' : 'lumin';
             const directions = [
-                { dr: -1, dc: 0 }, // Up
-                { dr: 1, dc: 0 },  // Down
-                { dr: 0, dc: -1 }, // Left
-                { dr: 0, dc: 1 }   // Right
+                { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+                { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
             ];
 
             directions.forEach(dir => {
                 let adjR = r + dir.dr;
                 let adjC = c + dir.dc;
 
-                // Check if adjacent is opponent
                 if (isValidCoord(adjR, adjC) && boardState[adjR][adjC] === opponent) {
                     let beyondR = adjR + dir.dr;
                     let beyondC = adjC + dir.dc;
 
-                    // Check if beyond is current faction (making a sandwich)
                     if (isValidCoord(beyondR, beyondC) && boardState[beyondR][beyondC] === faction) {
-                        // Capture!
                         boardState[adjR][adjC] = null;
                         scores[faction]++;
                         capturedPools[faction].push(opponent);
@@ -468,20 +446,16 @@
         function endTurn() {
             hasRolledThisTurn = false;
             document.getElementById('dice-view').textContent = '🎲';
-            document.getElementById('roll-btn').disabled = false;
 
             turnInRound++;
-            
-            // Switch turns
             currentTurn = currentTurn === 'lumin' ? 'nox' : 'lumin';
 
-            // Check if full round is done (6 total turns: 3 per player)
             if (turnInRound > 6) {
                 executeRoundCollapse();
                 roundNumber++;
                 turnInRound = 1;
                 
-                if (roundNumber > 9 || isBoardFullOrCollapsed()) {
+                if (roundNumber > 9 || collapseRadius >= 9) {
                     endGame();
                     return;
                 }
@@ -498,11 +472,10 @@
             isAiTurn = true;
             setTimeout(() => {
                 rollActionDie();
-            }, 800);
+            }, 600);
         }
 
         function executeAIPlacements() {
-            // AI simple strategy: place remaining placements randomly on valid cells
             const interval = setInterval(() => {
                 if (placementsRemaining <= 0) {
                     clearInterval(interval);
@@ -514,9 +487,7 @@
                 const validCells = [];
                 for (let r = 0; r < GRID_SIZE; r++) {
                     for (let c = 0; c < GRID_SIZE; c++) {
-                        if (boardState[r][c] === null) {
-                            validCells.push({ r, c });
-                        }
+                        if (boardState[r][c] === null) validCells.push({ r, c });
                     }
                 }
 
@@ -528,63 +499,33 @@
                     return;
                 }
 
-                // Pick random valid spot
                 const choice = validCells[Math.floor(Math.random() * validCells.length)];
                 placeStone(choice.r, choice.c, currentTurn);
 
-            }, 500);
+            }, 400);
         }
 
         function executeRoundCollapse() {
-            // Rescue stones on the outermost active layer and collapse it
             let minCoord = collapseRadius;
             let maxCoord = GRID_SIZE - 1 - collapseRadius;
 
             for (let i = minCoord; i <= maxCoord; i++) {
-                // Top & Bottom rows
                 checkAndRescue(minCoord, i);
                 checkAndRescue(maxCoord, i);
-                // Left & Right columns
                 checkAndRescue(i, minCoord);
                 checkAndRescue(i, maxCoord);
             }
-
             collapseRadius++;
-
-            // Fill collapsed layer with 'collapsed' state
-            let newMin = collapseRadius;
-            let newMax = GRID_SIZE - 1 - collapseRadius;
-            for (let r = newMin; r <= newMax; r++) {
-                for (let c = newMin; c <= newMax; c++) {
-                    // Only collapse the absolute outer active edge
-                    if (r === newMin || r === newMax || c === newMin || c === newMax) {
-                        // Keep inner playable
-                    }
-                }
-            }
-
-            // Mark current outer border as collapsed
-            for (let i = minCoord; i <= maxCoord; i++) {
-                if (boardState[minCoord][i] !== 'collapsed') boardState[minCoord][i] = 'collapsed';
-                if (boardState[maxCoord][i] !== 'collapsed') boardState[maxCoord][i] = 'collapsed';
-                if (boardState[i][minCoord] !== 'collapsed') boardState[i][minCoord] = 'collapsed';
-                if (boardState[i][maxCoord] !== 'collapsed') boardState[i][maxCoord] = 'collapsed';
-            }
         }
 
         function checkAndRescue(r, c) {
             const val = boardState[r][c];
             if (val === 'lumin' || val === 'nox') {
-                reservePools[val]++; // Rescue back to reserve pool!
+                reservePools[val]++;
                 boardState[r][c] = 'collapsed';
             } else if (val === null) {
                 boardState[r][c] = 'collapsed';
             }
-        }
-
-        function isBoardFullOrCollapsed() {
-            // Check if playable area is entirely gone
-            return collapseRadius >= 9;
         }
 
         function updateUI() {
@@ -595,5 +536,38 @@
             document.getElementById('lumin-score').textContent = scores.lumin;
             document.getElementById('nox-score').textContent = scores.nox;
 
-            // Render captured lists
-            renderCapturedList('lumin-captured', capturedPool
+            renderCapturedList('lumin-captured', capturedPools.lumin);
+            renderCapturedList('nox-captured', capturedPools.nox);
+        }
+
+        function renderCapturedList(elementId, pool) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            pool.forEach(faction => {
+                const mini = document.createElement('div');
+                mini.className = `mini-stone ${faction}`;
+                container.appendChild(mini);
+            });
+        }
+
+        function endGame() {
+            const modal = document.getElementById('game-over-modal');
+            const title = document.getElementById('winner-title');
+            const desc = document.getElementById('winner-desc');
+
+            modal.style.display = 'flex';
+
+            if (scores.lumin > scores.nox) {
+                title.textContent = "Lumin Victory!";
+                desc.textContent = `Lumin wins with ${scores.lumin} captured stones.`;
+            } else if (scores.nox > scores.lumin) {
+                title.textContent = "Nox Victory!";
+                desc.textContent = `Nox wins with ${scores.nox} captured stones.`;
+            } else {
+                title.textContent = "It's a Draw!";
+                desc.textContent = `Both captured equal stones (${scores.lumin}).`;
+            }
+        }
+    </script>
+</body>
+</html>
