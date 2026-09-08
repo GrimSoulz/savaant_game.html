@@ -246,8 +246,8 @@
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button class="btn faction-btn" id="btn-lumin">Play as Lumin</button>
-        <button class="btn faction-btn" id="btn-nox">Play as Nox</button>
+        <button class="btn faction-btn" onclick="startGame('lumin')">Play as Lumin</button>
+        <button class="btn faction-btn" onclick="startGame('nox')">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -308,8 +308,6 @@
         let reservePools = { lumin: 30, nox: 30 };
         let isAiActive = false;
 
-        document.getElementById('btn-lumin').addEventListener('click', () => startGame('lumin'));
-        document.getElementById('btn-nox').addEventListener('click', () => startGame('nox'));
         document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
 
         function startGame(faction) {
@@ -404,7 +402,6 @@
             renderBoard();
             updateUI();
 
-            // Strict check: if placements hit 0, immediately finish turn to prevent freezing
             if (placementsRemaining <= 0) {
                 setTimeout(finishCurrentTurn, 100);
             }
@@ -484,7 +481,6 @@
             }, 600);
         }
 
-        // Smart AI: Prioritizes capturing player pieces if possible, otherwise picks valid cells
         function executeAiPlacementsStepByStep() {
             if (placementsRemaining <= 0 || currentTurn !== aiFaction) {
                 if (placementsRemaining <= 0) {
@@ -513,7 +509,6 @@
                 return;
             }
 
-            // Pick a capturing move if available, otherwise random open cell
             let choice;
             if (capturingCells.length > 0) {
                 choice = capturingCells[Math.floor(Math.random() * capturingCells.length)];
@@ -528,7 +523,6 @@
             }
         }
 
-        // Helper to let the AI look ahead one move for a capture
         function simulatesCapture(r, c, faction) {
             const opponent = faction === 'lumin' ? 'nox' : 'lumin';
             const directions = [
@@ -601,4 +595,23 @@
 
         function endGame() {
             isAiActive = true;
-            const modal = d
+            const modal = document.getElementById('game-over-modal');
+            const title = document.getElementById('winner-title');
+            const desc = document.getElementById('winner-desc');
+
+            modal.style.display = 'flex';
+
+            if (scores.lumin > scores.nox) {
+                title.textContent = "Lumin Victory!";
+                desc.textContent = `Lumin wins with ${scores.lumin} captured stones.`;
+            } else if (scores.nox > scores.lumin) {
+                title.textContent = "Nox Victory!";
+                desc.textContent = `Nox wins with ${scores.nox} captured stones.`;
+            } else {
+                title.textContent = "It's a Draw!";
+                desc.textContent = `Both captured equal stones (${scores.lumin}).`;
+            }
+        }
+    </script>
+</body>
+</html>
