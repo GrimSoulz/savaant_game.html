@@ -295,6 +295,7 @@
         const GRID_SIZE = 20;
         let boardState = [];
         let playerFaction = 'lumin';
+        let aiFaction = 'nox';
         let currentTurn = 'lumin';
         let roundNumber = 1;
         let turnInRound = 1;
@@ -305,7 +306,7 @@
         let scores = { lumin: 0, nox: 0 };
         let capturedPools = { lumin: [], nox: [] };
         let reservePools = { lumin: 30, nox: 30 };
-        let isAiTurn = false;
+        let isAiTurnInProgress = false;
 
         document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
         document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
@@ -313,6 +314,8 @@
 
         function startGame(faction) {
             playerFaction = faction;
+            aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
+            
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-container').style.display = 'flex';
             
@@ -320,9 +323,9 @@
             renderBoard();
             updateUI();
 
-            // If player chose Nox, AI is Lumin and needs to take the first turn
-            if (currentTurn !== playerFaction) {
-                runAITurn();
+            // If AI goes first (Player chose Nox), trigger AI turn
+            if (currentTurn === aiFaction) {
+                triggerAITurn();
             }
         }
 
@@ -367,12 +370,9 @@
         }
 
         function handlePlayerRoll() {
-            if (hasRolledThisTurn || isAiTurn) return;
+            if (hasRolledThisTurn || isAiTurnInProgress) return;
             if (currentTurn !== playerFaction) return;
-            executeRoll();
-        }
 
-        function executeRoll() {
             const diceView = document.getElementById('dice-view');
             diceView.textContent = '...';
 
@@ -382,15 +382,11 @@
                 placementsRemaining = roll;
                 hasRolledThisTurn = true;
                 updateUI();
-
-                if (currentTurn !== playerFaction) {
-                    executeAIPlacements();
-                }
             }, 300);
         }
 
         function handleCellClick(r, c) {
-            if (isAiTurn || currentTurn !== playerFaction) return;
+            if (isAiTurnInProgress || currentTurn !== playerFaction) return;
             if (!hasRolledThisTurn || placementsRemaining <= 0) {
                 alert("You must roll the D6 action die first!");
                 return;
@@ -466,13 +462,15 @@
 
             updateUI();
 
-            if (currentTurn !== playerFaction) {
-                runAITurn();
+            // Check if next turn belongs to the AI
+            if (currentTurn === aiFaction) {
+                triggerAITurn();
             }
         }
 
-        function runAITurn() {
-            isAiTurn = true;
+        function triggerAITurn() {
+            isAiTurnInProgress = true;
+
             setTimeout(() => {
                 const diceView = document.getElementById('dice-view');
                 diceView.textContent = '...';
@@ -485,15 +483,15 @@
                     updateUI();
 
                     executeAIPlacements();
-                }, 400);
-            }, 500);
+                }, 500);
+            }, 600);
         }
 
         function executeAIPlacements() {
             const interval = setInterval(() => {
                 if (placementsRemaining <= 0) {
                     clearInterval(interval);
-                    isAiTurn = false;
+                    isAiTurnInProgress = false;
                     endTurn();
                     return;
                 }
@@ -508,13 +506,13 @@
                 if (validCells.length === 0) {
                     placementsRemaining = 0;
                     clearInterval(interval);
-                    isAiTurn = false;
+                    isAiTurnInProgress = false;
                     endTurn();
                     return;
                 }
 
                 const choice = validCells[Math.floor(Math.random() * validCells.length)];
-                placeStone(choice.r, choice.c, currentTurn);
+                placeStone(choice.r, choice.c, aiFaction);
 
             }, 400);
         }
@@ -543,12 +541,17 @@
         }
 
         function updateUI() {
-            document.getElementById('current-turn-text').textContent = `${currentTurn.toUpperCase()}'s Turn`;
+            const isPlayerTurn = (currentTurn === playerFaction);
+            document.getElementById('current-turn-text').textContent = isPlayerTurn ? "Your Turn" : `${aiFaction.toUpperCase()}'s Turn (AI)`;
             document.getElementById('round-num').textContent = roundNumber;
             document.getElementById('placements-left').textContent = placementsRemaining;
             
             document.getElementById('lumin-score').textContent = scores.lumin;
             document.getElementById('nox-score').textContent = scores.nox;
+
+            // Highlight status box based on active turn
+            const statusBox = document.getElementById('status-box');
+            statusBox.style.borderLeftColor = currentTurn === 'lumin' ? 'var(--lumin-accent)' : 'var(--nox-accent)';
 
             renderCapturedList('lumin-captured', capturedPools.lumin);
             renderCapturedList('nox-captured', capturedPools.nox);
