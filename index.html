@@ -308,9 +308,9 @@
         let reservePools = { lumin: 30, nox: 30 };
         let isAiActive = false;
 
-        document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
-        document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
-        document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); handlePlayerRoll(); });
+        document.getElementById('btn-lumin').addEventListener('click', () => startGame('lumin'));
+        document.getElementById('btn-nox').addEventListener('click', () => startGame('nox'));
+        document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
 
         function startGame(faction) {
             playerFaction = faction;
@@ -323,7 +323,6 @@
             renderBoard();
             updateUI();
 
-            // If player chose Nox, AI is Lumin and takes the opening turn
             if (currentTurn === aiFaction) {
                 startAiTurn();
             }
@@ -358,10 +357,7 @@
                     } else {
                         const rowIdx = r;
                         const colIdx = c;
-                        cell.addEventListener('pointerdown', (e) => {
-                            e.preventDefault();
-                            handleCellClick(rowIdx, colIdx);
-                        });
+                        cell.addEventListener('click', () => handleCellClick(rowIdx, colIdx));
                     }
 
                     gridEl.appendChild(cell);
@@ -386,7 +382,7 @@
 
         function handleCellClick(r, c) {
             if (isAiActive || currentTurn !== playerFaction) return;
-            if (!hasRolledThisToolCheck() || placementsRemaining <= 0) {
+            if (!hasRolledThisTurn || placementsRemaining <= 0) {
                 alert("You must roll the D6 action die first!");
                 return;
             }
@@ -394,11 +390,6 @@
             if (boardState[r][c] !== null) return;
 
             placeStone(r, c, playerFaction);
-        }
-
-        function-rolled-check() {} // helper scope stub
-        function hasRolledThisToolCheck() {
-            return hasRolledThisTurn;
         }
 
         function placeStone(r, c, faction) {
@@ -466,7 +457,6 @@
 
             updateUI();
 
-            // Hand control strictly to AI if it's their turn; otherwise, STOP and wait for player click.
             if (currentTurn === aiFaction) {
                 startAiTurn();
             } else {
@@ -591,4 +581,5 @@
         }
     </script>
 </body>
-</html>
+    </html>
+    
