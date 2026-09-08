@@ -404,8 +404,9 @@
             renderBoard();
             updateUI();
 
+            // Strict check: if placements hit 0, immediately finish turn to prevent freezing
             if (placementsRemaining <= 0) {
-                finishCurrentTurn();
+                setTimeout(finishCurrentTurn, 100);
             }
         }
 
@@ -457,7 +458,6 @@
 
             updateUI();
 
-            // Strict Handover: Stop AI lock if it's the player's turn now
             if (currentTurn === aiFaction) {
                 startAiTurn();
             } else {
@@ -484,35 +484,70 @@
             }, 600);
         }
 
-        // Replaced setInterval with a safe setTimeout chain to completely prevent loop stacking
+        // Smart AI: Prioritizes capturing player pieces if possible, otherwise picks valid cells
         function executeAiPlacementsStepByStep() {
             if (placementsRemaining <= 0 || currentTurn !== aiFaction) {
                 if (placementsRemaining <= 0) {
-                    finishCurrentTurn();
+                    setTimeout(finishCurrentTurn, 200);
                 }
                 return;
             }
 
             const validCells = [];
+            const capturingCells = [];
+
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
-                    if (boardState[r][c] === null) validCells.push({ r, c });
+                    if (boardState[r][c] === null) {
+                        validCells.push({ r, c });
+                        if (simulatesCapture(r, c, aiFaction)) {
+                            capturingCells.push({ r, c });
+                        }
+                    }
                 }
             }
 
             if (validCells.length === 0) {
                 placementsRemaining = 0;
-                finishCurrentTurn();
+                setTimeout(finishCurrentTurn, 200);
                 return;
             }
 
-            const choice = validCells[Math.floor(Math.random() * validCells.length)];
+            // Pick a capturing move if available, otherwise random open cell
+            let choice;
+            if (capturingCells.length > 0) {
+                choice = capturingCells[Math.floor(Math.random() * capturingCells.length)];
+            } else {
+                choice = validCells[Math.floor(Math.random() * validCells.length)];
+            }
+
             placeStone(choice.r, choice.c, aiFaction);
 
-            // If placements still remain for the AI, queue the next placement safely
             if (placementsRemaining > 0 && currentTurn === aiFaction) {
                 setTimeout(executeAiPlacementsStepByStep, 400);
             }
+        }
+
+        // Helper to let the AI look ahead one move for a capture
+        function simulatesCapture(r, c, faction) {
+            const opponent = faction === 'lumin' ? 'nox' : 'lumin';
+            const directions = [
+                { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+                { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+            ];
+
+            for (let dir of directions) {
+                let adjR = r + dir.dr;
+                let adjC = c + dir.dc;
+                if (isValidCoord(adjR, adjC) && boardState[adjR][adjC] === opponent) {
+                    let beyondR = adjR + dir.dr;
+                    let beyondC = adjC + dir.dc;
+                    if (isValidCoord(beyondR, beyondC) && boardState[beyondR][beyondC] === faction) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         function executeRoundCollapse() {
@@ -566,23 +601,4 @@
 
         function endGame() {
             isAiActive = true;
-            const modal = document.getElementById('game-over-modal');
-            const title = document.getElementById('winner-title');
-            const desc = document.getElementById('winner-desc');
-
-            modal.style.display = 'flex';
-
-            if (scores.lumin > scores.nox) {
-                title.textContent = "Lumin Victory!";
-                desc.textContent = `Lumin wins with ${scores.lumin} captured stones.`;
-            } else if (scores.nox > scores.lumin) {
-                title.textContent = "Nox Victory!";
-                desc.textContent = `Nox wins with ${scores.nox} captured stones.`;
-            } else {
-                title.textContent = "It's a Draw!";
-                desc.textContent = `Both captured equal stones (${scores.lumin}).`;
-            }
-        }
-    </script>
-</body>
-</html>
+            const modal = d
