@@ -56,6 +56,7 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
             max-width: 350px;
             margin-top: 30px;
+            display: block; /* Explicitly visible on load */
         }
 
         .btn {
@@ -82,7 +83,7 @@
 
         /* Game Container */
         #game-container {
-            display: none;
+            display: none; /* Hidden until faction chosen */
             flex-direction: column;
             gap: 15px;
             width: 100%;
@@ -240,14 +241,14 @@
 <body>
 
     <h1>SAVAANT</h1>
-    <div class="subtitle">A Solaris Tactical Grid Game</div>
+    <div class="subtitle">A Solaris Tactical Grid Game v2.6</div>
 
     <!-- Setup Screen -->
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button class="btn faction-btn" onclick="startGame('lumin')">Play as Lumin</button>
-        <button class="btn faction-btn" onclick="startGame('nox')">Play as Nox</button>
+        <button class="btn faction-btn" onclick="window.startGame('lumin')">Play as Lumin</button>
+        <button class="btn faction-btn" onclick="window.startGame('nox')">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -310,7 +311,8 @@
 
         document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
 
-        function startGame(faction) {
+        // Explicitly attach to window scope to avoid click failures
+        window.startGame = function(faction) {
             playerFaction = faction;
             aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
             
@@ -324,7 +326,7 @@
             if (currentTurn === aiFaction) {
                 startAiTurn();
             }
-        }
+        };
 
         function initBoard() {
             boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -486,7 +488,6 @@
                     hasRolledThisTurn = true;
                     updateUI();
 
-                    // Failsafe: if AI has no reserves, immediately finish turn
                     if (reservePools[aiFaction] <= 0) {
                         placementsRemaining = 0;
                         setTimeout(finishCurrentTurn, 300);
@@ -602,7 +603,4 @@
             const container = document.getElementById(elementId);
             container.innerHTML = '';
             pool.forEach(faction => {
-                const mini = document.createElement('div');
-                mini.className = `mini-stone ${faction}`;
-                container.appendChild(mini);
-  
+                const mini = document.createElement(
