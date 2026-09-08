@@ -306,7 +306,7 @@
         let scores = { lumin: 0, nox: 0 };
         let capturedPools = { lumin: [], nox: [] };
         let reservePools = { lumin: 30, nox: 30 };
-        let isAiTurnInProgress = false;
+        let isAiActive = false;
 
         document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
         document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
@@ -323,9 +323,9 @@
             renderBoard();
             updateUI();
 
-            // If AI goes first (Player chose Nox), trigger AI turn
+            // If player chose Nox, AI is Lumin and takes the opening turn
             if (currentTurn === aiFaction) {
-                triggerAITurn();
+                startAiTurn();
             }
         }
 
@@ -370,8 +370,7 @@
         }
 
         function handlePlayerRoll() {
-            if (hasRolledThisTurn || isAiTurnInProgress) return;
-            if (currentTurn !== playerFaction) return;
+            if (isAiActive || hasRolledThisTurn || currentTurn !== playerFaction) return;
 
             const diceView = document.getElementById('dice-view');
             diceView.textContent = '...';
@@ -386,8 +385,8 @@
         }
 
         function handleCellClick(r, c) {
-            if (isAiTurnInProgress || currentTurn !== playerFaction) return;
-            if (!hasRolledThisTurn || placementsRemaining <= 0) {
+            if (isAiActive || currentTurn !== playerFaction) return;
+            if (!hasRolledThisToolCheck() || placementsRemaining <= 0) {
                 alert("You must roll the D6 action die first!");
                 return;
             }
@@ -395,6 +394,11 @@
             if (boardState[r][c] !== null) return;
 
             placeStone(r, c, playerFaction);
+        }
+
+        function-rolled-check() {} // helper scope stub
+        function hasRolledThisToolCheck() {
+            return hasRolledThisTurn;
         }
 
         function placeStone(r, c, faction) {
@@ -410,7 +414,7 @@
             updateUI();
 
             if (placementsRemaining <= 0) {
-                endTurn();
+                finishCurrentTurn();
             }
         }
 
@@ -442,12 +446,12 @@
             return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && boardState[r][c] !== 'collapsed';
         }
 
-        function endTurn() {
+        function finishCurrentTurn() {
             hasRolledThisTurn = false;
             document.getElementById('dice-view').textContent = '🎲';
 
             turnInRound++;
-            currentTurn = currentTurn === 'lumin' ? 'nox' : 'lumin';
+            currentTurn = (currentTurn === 'lumin') ? 'nox' : 'lumin';
 
             if (turnInRound > 6) {
                 executeRoundCollapse();
@@ -462,14 +466,16 @@
 
             updateUI();
 
-            // Check if next turn belongs to the AI
+            // Hand control strictly to AI if it's their turn; otherwise, STOP and wait for player click.
             if (currentTurn === aiFaction) {
-                triggerAITurn();
+                startAiTurn();
+            } else {
+                isAiActive = false;
             }
         }
 
-        function triggerAITurn() {
-            isAiTurnInProgress = true;
+        function startAiTurn() {
+            isAiActive = true;
 
             setTimeout(() => {
                 const diceView = document.getElementById('dice-view');
@@ -482,17 +488,16 @@
                     hasRolledThisTurn = true;
                     updateUI();
 
-                    executeAIPlacements();
+                    executeAiPlacements();
                 }, 500);
             }, 600);
         }
 
-        function executeAIPlacements() {
+        function executeAiPlacements() {
             const interval = setInterval(() => {
                 if (placementsRemaining <= 0) {
                     clearInterval(interval);
-                    isAiTurnInProgress = false;
-                    endTurn();
+                    finishCurrentTurn();
                     return;
                 }
 
@@ -506,8 +511,7 @@
                 if (validCells.length === 0) {
                     placementsRemaining = 0;
                     clearInterval(interval);
-                    isAiTurnInProgress = false;
-                    endTurn();
+                    finishCurrentTurn();
                     return;
                 }
 
@@ -549,7 +553,6 @@
             document.getElementById('lumin-score').textContent = scores.lumin;
             document.getElementById('nox-score').textContent = scores.nox;
 
-            // Highlight status box based on active turn
             const statusBox = document.getElementById('status-box');
             statusBox.style.borderLeftColor = currentTurn === 'lumin' ? 'var(--lumin-accent)' : 'var(--nox-accent)';
 
@@ -568,6 +571,7 @@
         }
 
         function endGame() {
+            isAiActive = true;
             const modal = document.getElementById('game-over-modal');
             const title = document.getElementById('winner-title');
             const desc = document.getElementById('winner-desc');
