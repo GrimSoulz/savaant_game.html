@@ -246,8 +246,8 @@
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button class="btn faction-btn" onclick="startGame('lumin')">Play as Lumin</button>
-        <button class="btn faction-btn" onclick="startGame('nox')">Play as Nox</button>
+        <button class="btn faction-btn" id="btn-lumin">Play as Lumin</button>
+        <button class="btn faction-btn" id="btn-nox">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -295,7 +295,6 @@
         const GRID_SIZE = 20;
         let boardState = [];
         let playerFaction = 'lumin';
-        let aiFaction = 'nox';
         let currentTurn = 'lumin';
         let roundNumber = 1;
         let turnInRound = 1;
@@ -306,14 +305,15 @@
         let scores = { lumin: 0, nox: 0 };
         let capturedPools = { lumin: [], nox: [] };
         let reservePools = { lumin: 30, nox: 30 };
-        let isAiActive = false;
+        let isAiTurn = false;
 
-        document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
+        // Use pointerdown for instant mobile responsiveness
+        document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
+        document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
+        document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); rollActionDie(); });
 
         function startGame(faction) {
             playerFaction = faction;
-            aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
-            
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-container').style.display = 'flex';
             
@@ -321,8 +321,8 @@
             renderBoard();
             updateUI();
 
-            if (currentTurn === aiFaction) {
-                startAiTurn();
+            if (currentTurn !== playerFaction) {
+                triggerAITurn();
             }
         }
 
@@ -355,7 +355,10 @@
                     } else {
                         const rowIdx = r;
                         const colIdx = c;
-                        cell.addEventListener('click', () => handleCellClick(rowIdx, colIdx));
+                        cell.addEventListener('pointerdown', (e) => {
+                            e.preventDefault();
+                            handleCellClick(rowIdx, colIdx);
+                        });
                     }
 
                     gridEl.appendChild(cell);
@@ -363,8 +366,9 @@
             }
         }
 
-        function handlePlayerRoll() {
-            if (isAiActive || hasRolledThisTurn || currentTurn !== playerFaction) return;
+        function rollActionDie() {
+            if (hasRolledThisTurn) return;
+            if (isAiTurn && currentTurn !== playerFaction) return;
 
             const diceView = document.getElementById('dice-view');
             diceView.textContent = '...';
@@ -375,11 +379,15 @@
                 placementsRemaining = roll;
                 hasRolledThisTurn = true;
                 updateUI();
+
+                if (currentTurn !== playerFaction) {
+                    executeAIPlacements();
+                }
             }, 300);
         }
 
         function handleCellClick(r, c) {
-            if (isAiActive || currentTurn !== playerFaction) return;
+            if (isAiTurn || currentTurn !== playerFaction) return;
             if (!hasRolledThisTurn || placementsRemaining <= 0) {
                 alert("You must roll the D6 action die first!");
                 return;
@@ -403,7 +411,7 @@
             updateUI();
 
             if (placementsRemaining <= 0) {
-                setTimeout(finishCurrentTurn, 100);
+                endTurn();
             }
         }
 
@@ -435,12 +443,12 @@
             return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && boardState[r][c] !== 'collapsed';
         }
 
-        function finishCurrentTurn() {
+        function endTurn() {
             hasRolledThisTurn = false;
             document.getElementById('dice-view').textContent = '🎲';
 
             turnInRound++;
-            currentTurn = (currentTurn === 'lumin') ? 'nox' : 'lumin';
+            currentTurn = currentTurn === 'lumin' ? 'nox' : 'lumin';
 
             if (turnInRound > 6) {
                 executeRoundCollapse();
@@ -455,93 +463,46 @@
 
             updateUI();
 
-            if (currentTurn === aiFaction) {
-                startAiTurn();
-            } else {
-                isAiActive = false;
+            if (currentTurn !== playerFaction) {
+                triggerAITurn();
             }
         }
 
-        function startAiTurn() {
-            isAiActive = true;
-
+        function triggerAITurn() {
+            isAiTurn = true;
             setTimeout(() => {
-                const diceView = document.getElementById('dice-view');
-                diceView.textContent = '...';
-
-                setTimeout(() => {
-                    const roll = Math.floor(Math.random() * 6) + 1;
-                    diceView.textContent = roll;
-                    placementsRemaining = roll;
-                    hasRolledThisTurn = true;
-                    updateUI();
-
-                    executeAiPlacementsStepByStep();
-                }, 500);
+                rollActionDie();
             }, 600);
         }
 
-        function executeAiPlacementsStepByStep() {
-            if (placementsRemaining <= 0 || currentTurn !== aiFaction) {
+        function executeAIPlacements() {
+            const interval = setInterval(() => {
                 if (placementsRemaining <= 0) {
-                    setTimeout(finishCurrentTurn, 200);
+                    clearInterval(interval);
+                    isAiTurn = false;
+                    endTurn();
+                    return;
                 }
-                return;
-            }
 
-            const validCells = [];
-            const capturingCells = [];
-
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    if (boardState[r][c] === null) {
-                        validCells.push({ r, c });
-                        if (simulatesCapture(r, c, aiFaction)) {
-                            capturingCells.push({ r, c });
-                        }
+                const validCells = [];
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (boardState[r][c] === null) validCells.push({ r, c });
                     }
                 }
-            }
 
-            if (validCells.length === 0) {
-                placementsRemaining = 0;
-                setTimeout(finishCurrentTurn, 200);
-                return;
-            }
-
-            let choice;
-            if (capturingCells.length > 0) {
-                choice = capturingCells[Math.floor(Math.random() * capturingCells.length)];
-            } else {
-                choice = validCells[Math.floor(Math.random() * validCells.length)];
-            }
-
-            placeStone(choice.r, choice.c, aiFaction);
-
-            if (placementsRemaining > 0 && currentTurn === aiFaction) {
-                setTimeout(executeAiPlacementsStepByStep, 400);
-            }
-        }
-
-        function simulatesCapture(r, c, faction) {
-            const opponent = faction === 'lumin' ? 'nox' : 'lumin';
-            const directions = [
-                { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
-                { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
-            ];
-
-            for (let dir of directions) {
-                let adjR = r + dir.dr;
-                let adjC = c + dir.dc;
-                if (isValidCoord(adjR, adjC) && boardState[adjR][adjC] === opponent) {
-                    let beyondR = adjR + dir.dr;
-                    let beyondC = adjC + dir.dc;
-                    if (isValidCoord(beyondR, beyondC) && boardState[beyondR][beyondC] === faction) {
-                        return true;
-                    }
+                if (validCells.length === 0) {
+                    placementsRemaining = 0;
+                    clearInterval(interval);
+                    isAiTurn = false;
+                    endTurn();
+                    return;
                 }
-            }
-            return false;
+
+                const choice = validCells[Math.floor(Math.random() * validCells.length)];
+                placeStone(choice.r, choice.c, currentTurn);
+
+            }, 400);
         }
 
         function executeRoundCollapse() {
@@ -568,16 +529,12 @@
         }
 
         function updateUI() {
-            const isPlayerTurn = (currentTurn === playerFaction);
-            document.getElementById('current-turn-text').textContent = isPlayerTurn ? "Your Turn" : `${aiFaction.toUpperCase()}'s Turn (AI)`;
+            document.getElementById('current-turn-text').textContent = `${currentTurn.toUpperCase()}'s Turn`;
             document.getElementById('round-num').textContent = roundNumber;
             document.getElementById('placements-left').textContent = placementsRemaining;
             
             document.getElementById('lumin-score').textContent = scores.lumin;
             document.getElementById('nox-score').textContent = scores.nox;
-
-            const statusBox = document.getElementById('status-box');
-            statusBox.style.borderLeftColor = currentTurn === 'lumin' ? 'var(--lumin-accent)' : 'var(--nox-accent)';
 
             renderCapturedList('lumin-captured', capturedPools.lumin);
             renderCapturedList('nox-captured', capturedPools.nox);
@@ -594,7 +551,6 @@
         }
 
         function endGame() {
-            isAiActive = true;
             const modal = document.getElementById('game-over-modal');
             const title = document.getElementById('winner-title');
             const desc = document.getElementById('winner-desc');
