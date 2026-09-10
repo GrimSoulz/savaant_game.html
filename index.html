@@ -3,78 +3,588 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Savaant</title>
+    <title>Savaant - A Solaris Tactical Game</title>
     <style>
+        :root {
+            --bg-color: #121417;
+            --panel-bg: #1a1d23;
+            --border-color: #2f3640;
+            --text-main: #f5f6fa;
+            --text-muted: #a4b0be;
+            --lumin-accent: #00a8ff;
+            --nox-accent: #4cd137;
+            --collapse-color: #718093;
+        }
+
         body {
-            background-color: #121417;
-            color: #f5f6fa;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
             touch-action: manipulation;
         }
+
+        h1 {
+            margin: 5px 0;
+            letter-spacing: 2px;
+            color: #dcdde1;
+            font-size: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
         #setup-screen {
-            background: #1a1d23;
-            padding: 30px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
             border-radius: 8px;
             text-align: center;
-            border: 1px solid #2f3640;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            max-width: 350px;
+            margin-top: 30px;
         }
+
         .btn {
             background-color: #353b48;
             color: white;
-            border: 1px solid #2f3640;
-            padding: 15px 30px;
-            margin: 10px;
+            border: 1px solid var(--border-color);
+            padding: 14px 20px;
+            margin: 10px 0;
             border-radius: 6px;
-            font-size: 1.2rem;
             cursor: pointer;
-            display: block;
-            width: 220px;
+            font-size: 1rem;
+            width: 100%;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
         }
+
         .btn:active {
-            background-color: #00a8ff;
+            background-color: #487eb0;
         }
+
         #game-container {
             display: none;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+            align-items: center;
+        }
+
+        .sidebar {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .status-box {
+            background: #111317;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--lumin-accent);
+            font-size: 0.9rem;
+        }
+
+        #board-wrapper {
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(20, 24px);
+            grid-template-rows: repeat(20, 24px);
+            gap: 1px;
+            background-color: #2f3640;
+            border: 1px solid #2f3640;
+        }
+
+        .cell {
+            background-color: #1a1d23;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .cell.collapsed {
+            background-color: var(--collapse-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .stone {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .stone.lumin {
+            background: #f5f6fa;
+            color: var(--lumin-accent);
+            border: 2px solid var(--lumin-accent);
+        }
+
+        .stone.nox {
+            background: #2f3640;
+            color: var(--nox-accent);
+            border: 2px solid var(--nox-accent);
+        }
+
+        .grey-marker {
+            width: 18px;
+            height: 18px;
+            background-color: var(--collapse-color);
+            border-radius: 3px;
+        }
+
+        .dice-display {
+            font-size: 2rem;
             text-align: center;
+            background: #111317;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px dashed var(--border-color);
+        }
+
+        .captured-list {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            max-height: 50px;
+            overflow-y: auto;
+            background: #111317;
+            padding: 6px;
+            border-radius: 4px;
+            margin-top: 3px;
+        }
+
+        .mini-stone {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .mini-stone.lumin { background: #f5f6fa; border: 1px solid var(--lumin-accent); }
+        .mini-stone.nox { background: #2f3640; border: 1px solid var(--nox-accent); }
+
+        #game-over-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
 <body>
 
+    <h1>SAVAANT</h1>
+    <div class="subtitle">A Solaris Tactical Grid Game</div>
+
     <div id="setup-screen">
-        <h2>Choose Your Faction</h2>
-        <button class="btn" id="pick-lumin">Play as Lumin</button>
-        <button class="btn" id="pick-nox">Play as Nox</button>
+        <h3>Choose Your Faction</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin goes first. Nox goes second.</p>
+        <button id="btn-lumin" class="btn">Play as Lumin</button>
+        <button id="btn-nox" class="btn">Play as Nox</button>
     </div>
 
     <div id="game-container">
-        <h2 id="current-status">Game Started!</h2>
-        <p>If you can see this, faction selection worked.</p>
+        <div class="sidebar">
+            <h3>Match Status</h3>
+            <div id="status-box" class="status-box">
+                <strong>Turn:</strong> <span id="current-turn-text">Lumin's Turn</span><br>
+                <strong>Round:</strong> <span id="round-num">1</span> / 9<br>
+                <strong>Placements Left:</strong> <span id="placements-left">0</span>
+            </div>
+
+            <div>
+                <h3>Action Die</h3>
+                <div id="dice-view" class="dice-display">🎲</div>
+                <button id="roll-btn" class="btn">Roll D6</button>
+            </div>
+
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                <strong>Lumin Captures:</strong> <span id="lumin-score">0</span>
+                <div id="lumin-captured" class="captured-list"></div>
+                
+                <strong style="display:block; margin-top:5px;">Nox Captures:</strong> <span id="nox-score">0</span>
+                <div id="nox-captured" class="captured-list"></div>
+            </div>
+        </div>
+
+        <div id="board-wrapper">
+            <div id="grid"></div>
+        </div>
+    </div>
+
+    <div id="game-over-modal">
+        <div class="modal-content">
+            <h2 id="winner-title">Game Over</h2>
+            <p id="winner-desc"></p>
+            <button id="restart-btn" class="btn">Play Again</button>
+        </div>
     </div>
 
     <script>
-        // Using 'pointerdown' instead of 'click' for immediate mobile tablet response
-        document.getElementById('pick-lumin').addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            startGame('Lumin');
-        });
+        const GRID_SIZE = 20;
+        let boardState = [];
+        let playerFaction = 'lumin';
+        let aiFaction = 'nox';
+        let currentTurn = 'lumin';
+        let roundNumber = 1;
+        let turnInRound = 1;
+        let placementsRemaining = 0;
+        let hasRolledThisTurn = false;
+        let collapseRadius = 0;
+        
+        let scores = { lumin: 0, nox: 0 };
+        let capturedPools = { lumin: [], nox: [] };
+        let reservePools = { lumin: 50, nox: 50 };
+        let isAiActive = false;
 
-        document.getElementById('pick-nox').addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            startGame('Nox');
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btn-lumin').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('lumin'); });
+            document.getElementById('btn-nox').addEventListener('pointerdown', (e) => { e.preventDefault(); startGame('nox'); });
+            document.getElementById('roll-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); handlePlayerRoll(); });
+            document.getElementById('restart-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); location.reload(); });
         });
 
         function startGame(faction) {
+            playerFaction = faction;
+            aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
+            
             document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
-            document.getElementById('current-status').textContent = `Playing as ${faction}`;
+            document.getElementById('game-container').style.display = 'flex';
+            
+            initBoard();
+            renderBoard();
+            updateUI();
+
+            if (currentTurn === aiFaction) {
+                startAiTurn();
+            }
         }
-    </script>
-</body>
-</html>
+
+        function initBoard() {
+            boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        }
+
+        function renderBoard() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+
+                    const cellVal = boardState[r][c];
+
+                    if (cellVal === 'collapsed') {
+                        cell.classList.add('collapsed');
+                        const marker = document.createElement('div');
+                        marker.className = 'grey-marker';
+                        cell.appendChild(marker);
+                    } else if (cellVal === 'lumin' || cellVal === 'nox') {
+                        const stone = document.createElement('div');
+                        stone.className = `stone ${cellVal}`;
+                        stone.textContent = cellVal === 'lumin' ? 'O' : 'X';
+                        cell.appendChild(stone);
+                    } else {
+                        const rowIdx = r;
+                        const colIdx = c;
+                        cell.addEventListener('pointerdown', (e) => {
+                            e.preventDefault();
+                            handleCellClick(rowIdx, colIdx);
+                        });
+                    }
+
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        function handlePlayerRoll() {
+            if (isAiActive || hasRolledThisTurn || currentTurn !== playerFaction) return;
+
+            const diceView = document.getElementById('dice-view');
+            diceView.textContent = '...';
+
+            setTimeout(() => {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                diceView.textContent = roll;
+                placementsRemaining = roll;
+                hasRolledThisTurn = true;
+                updateUI();
+
+                if (reservePools[playerFaction] <= 0) {
+                    placementsRemaining = 0;
+                    setTimeout(finishCurrentTurn, 200);
+                }
+            }, 300);
+        }
+
+        function handleCellClick(r, c) {
+            if (isAiActive || currentTurn !== playerFaction) return;
+            if (!hasRolledThisTurn || placementsRemaining <= 0) {
+                alert("Roll the D6 action die first!");
+                return;
+            }
+
+            if (boardState[r][c] !== null) return;
+            placeStone(r, c, playerFaction);
+        }
+
+        function placeStone(r, c, faction) {
+            if (reservePools[faction] <= 0) {
+                placementsRemaining = 0;
+                setTimeout(finishCurrentTurn, 100);
+                return;
+            }
+
+            reservePools[faction]--;
+            boardState[r][c] = faction;
+            placementsRemaining--;
+
+            checkCaptures(r, c, faction);
+            renderBoard();
+            updateUI();
+
+            if (placementsRemaining <= 0) {
+                setTimeout(finishCurrentTurn, 100);
+            }
+        }
+
+        function checkCaptures(r, c, faction) {
+            const opponent = faction === 'lumin' ? 'nox' : 'lumin';
+            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+
+            directions.forEach(dir => {
+                let adjR = r + dir.dr;
+                let adjC = c + dir.dc;
+
+                if (isValidCoord(adjR, adjC) && boardState[adjR][adjC] === opponent) {
+                    let beyondR = adjR + dir.dr;
+                    let beyondC = adjC + dir.dc;
+
+                    if (isValidCoord(beyondR, beyondC) && boardState[beyondR][beyondC] === faction) {
+                        boardState[adjR][adjC] = null;
+                        scores[faction]++;
+                        capturedPools[faction].push(opponent);
+                        reservePools[faction]++;
+                    }
+                }
+            });
+        }
+
+        function isValidCoord(r, c) {
+            return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && boardState[r][c] !== 'collapsed';
+        }
+
+        function finishCurrentTurn() {
+            hasRolledThisTurn = false;
+            document.getElementById('dice-view').textContent = '🎲';
+
+            turnInRound++;
+            currentTurn = (currentTurn === 'lumin') ? 'nox' : 'lumin';
+
+            if (turnInRound > 6) {
+                executeRoundCollapse();
+                roundNumber++;
+                turnInRound = 1;
+                
+                if (roundNumber > 9 || collapseRadius >= 9) {
+                    endGame();
+                    return;
+                }
+            }
+
+            updateUI();
+
+            if (currentTurn === aiFaction) {
+                startAiTurn();
+            } else {
+                isAiActive = false;
+            }
+        }
+
+        function startAiTurn() {
+            isAiActive = true;
+
+            setTimeout(() => {
+                const diceView = document.getElementById('dice-view');
+                diceView.textContent = '...';
+
+                setTimeout(() => {
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    diceView.textContent = roll;
+                    placementsRemaining = roll;
+                    hasRolledThisTurn = true;
+                    updateUI();
+
+                    if (reservePools[aiFaction] <= 0) {
+                        placementsRemaining = 0;
+                        setTimeout(finishCurrentTurn, 300);
+                        return;
+                    }
+
+                    executeAiPlacementsStepByStep();
+                }, 500);
+            }, 600);
+        }
+
+        function executeAiPlacementsStepByStep() {
+            if (placementsRemaining <= 0 || currentTurn !== aiFaction || reservePools[aiFaction] <= 0) {
+                setTimeout(finishCurrentTurn, 200);
+                return;
+            }
+
+            const validCells = [];
+            const capturingCells = [];
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (boardState[r][c] === null) {
+                        validCells.push({ r, c });
+                        if (simulatesCapture(r, c, aiFaction)) {
+                            capturingCells.push({ r, c });
+                        }
+                    }
+                }
+            }
+
+            if (validCells.length === 0) {
+                placementsRemaining = 0;
+                setTimeout(finishCurrentTurn, 200);
+                return;
+            }
+
+            let choice = capturingCells.length > 0 ? capturingCells[Math.floor(Math.random() * capturingCells.length)] : validCells[Math.floor(Math.random() * validCells.length)];
+
+            placeStone(choice.r, choice.c, aiFaction);
+
+            if (placementsRemaining > 0 && currentTurn === aiFaction) {
+                setTimeout(executeAiPlacementsStepByStep, 400);
+            }
+        }
+
+        function simulatesCapture(r, c, faction) {
+            const opponent = faction === 'lumin' ? 'nox' : 'lumin';
+            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+
+            for (let dir of directions) {
+                let adjR = r + dir.dr;
+                let adjC = c + dir.dc;
+                if (isValidCoord(adjR, adjC) && boardState[adjR][adjC] === opponent) {
+                    let beyondR = adjR + dir.dr;
+                    let beyondC = adjC + dir.dc;
+                    if (isValidCoord(beyondR, beyondC) && boardState[beyondR][beyondC] === faction) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function executeRoundCollapse() {
+            let minCoord = collapseRadius;
+            let maxCoord = GRID_SIZE - 1 - collapseRadius;
+
+            for (let i = minCoord; i <= maxCoord; i++) {
+                checkAndRescue(minCoord, i);
+                checkAndRescue(maxCoord, i);
+                checkAndRescue(i, minCoord);
+                checkAndRescue(i, maxCoord);
+            }
+            collapseRadius++;
+        }
+
+        function checkAndRescue(r, c) {
+            const val = boardState[r][c];
+            if (val === 'lumin' || val === 'nox') {
+                reservePools[val]++;
+                boardState[r][c] = 'collapsed';
+            } else if (val === null) {
+                boardState[r][c] = 'collapsed';
+            }
+        }
+
+        function updateUI() {
+            const isPlayerTurn = (currentTurn === playerFaction);
+            document.getElementById('current-turn-text').textContent = isPlayerTurn ? "Your Turn" : `${aiFaction.toUpperCase()}'s Turn (AI)`;
+            document.getElementById('round-num').textContent = roundNumber;
+            document.getElementById('placements-left').textContent = placementsRemaining;
+            
+            document.getElementById('lumin-score').textContent = scores.lumin;
+            document.getElementById('nox-score').textContent = scores.nox;
+
+            const statusBox = document.getElementById('status-box');
+            statusBox.style.borderLeftColor = currentTurn === 'lumin' ? 'var(--lumin-accent)' : 'var(--nox-accent)';
+
+            renderCapturedList('lumin-captured', capturedPools.lumin);
+            renderCapturedList('nox-captured', capturedPools.nox);
+        }
+
+        function renderCapturedList(elementId, pool) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            pool.forEach(faction => {
+                const mini = document.createElement('div');
+                mini.className = `mini-stone ${faction}`;
+                container.appendChild(mini);
+            });
+        }
+
+        function endGame() {
+            isAiActive = true;
+            const modal = document.getElementById('game-over-modal');
+            const title = document.getElementById('winner-title');
+            const desc = document.getElementById('winner-desc');
+
+            modal.style.display = 'flex';
+
+            if (scores.lumin > scores.nox) {
+                title.textContent = "Lumin Victory!";
+                desc.textContent = `Lumin wins with ${scores.lumin} captured stones.`;
+            } else if (scores.nox > scores.lumin) {
+                title.textContent = "Nox Victory!";
+                desc.textContent = `Nox wins w
