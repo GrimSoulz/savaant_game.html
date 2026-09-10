@@ -247,8 +247,8 @@
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button id="btn-lumin" class="btn faction-btn">Play as Lumin</button>
-        <button id="btn-nox" class="btn faction-btn">Play as Nox</button>
+        <button class="btn faction-btn" onclick="window.startGame('lumin')">Play as Lumin</button>
+        <button class="btn faction-btn" onclick="window.startGame('nox')">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -288,7 +288,7 @@
         <div class="modal-content">
             <h2 id="winner-title">Game Over</h2>
             <p id="winner-desc"></p>
-            <button class="btn" id="restart-btn">Play Again</button>
+            <button class="btn" onclick="location.reload()">Play Again</button>
         </div>
     </div>
 
@@ -309,13 +309,10 @@
         let reservePools = { lumin: 50, nox: 50 };
         let isAiActive = false;
 
-        // Bind setup buttons safely via JS event listeners instead of inline onclick
-        document.getElementById('btn-lumin').addEventListener('click', () => startGame('lumin'));
-        document.getElementById('btn-nox').addEventListener('click', () => startGame('nox'));
         document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
-        document.getElementById('restart-btn').addEventListener('click', () => location.reload());
 
-        function startGame(faction) {
+        // Global exposure to guarantee click handling from inline attributes
+        window.startGame = function(faction) {
             playerFaction = faction;
             aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
             
@@ -326,10 +323,11 @@
             renderBoard();
             updateUI();
 
+            // If player chose Nox, AI plays Lumin first
             if (currentTurn === aiFaction) {
                 startAiTurn();
             }
-        }
+        };
 
         function initBoard() {
             boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -603,4 +601,7 @@
         }
 
         function renderCapturedList(elementId, pool) {
-            const con
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            pool.forEach(faction => {
+                const mini = document.createElement('div')
