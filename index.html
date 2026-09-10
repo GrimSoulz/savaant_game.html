@@ -56,7 +56,7 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
             max-width: 350px;
             margin-top: 30px;
-            display: block; /* Explicitly visible on load */
+            display: block;
         }
 
         .btn {
@@ -83,7 +83,7 @@
 
         /* Game Container */
         #game-container {
-            display: none; /* Hidden until faction chosen */
+            display: none;
             flex-direction: column;
             gap: 15px;
             width: 100%;
@@ -241,14 +241,14 @@
 <body>
 
     <h1>SAVAANT</h1>
-    <div class="subtitle">A Solaris Tactical Grid Game v2.6</div>
+    <div class="subtitle">A Solaris Tactical Grid Game</div>
 
     <!-- Setup Screen -->
     <div id="setup-screen">
         <h3>Choose Your Faction</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Lumin (White & Blue 'O') goes first. Nox (Black & Green 'X') goes second.</p>
-        <button class="btn faction-btn" onclick="window.startGame('lumin')">Play as Lumin</button>
-        <button class="btn faction-btn" onclick="window.startGame('nox')">Play as Nox</button>
+        <button id="btn-lumin" class="btn faction-btn">Play as Lumin</button>
+        <button id="btn-nox" class="btn faction-btn">Play as Nox</button>
     </div>
 
     <!-- Main Game Area -->
@@ -288,7 +288,7 @@
         <div class="modal-content">
             <h2 id="winner-title">Game Over</h2>
             <p id="winner-desc"></p>
-            <button class="btn" onclick="location.reload()">Play Again</button>
+            <button class="btn" id="restart-btn">Play Again</button>
         </div>
     </div>
 
@@ -309,10 +309,13 @@
         let reservePools = { lumin: 50, nox: 50 };
         let isAiActive = false;
 
+        // Bind setup buttons safely via JS event listeners instead of inline onclick
+        document.getElementById('btn-lumin').addEventListener('click', () => startGame('lumin'));
+        document.getElementById('btn-nox').addEventListener('click', () => startGame('nox'));
         document.getElementById('roll-btn').addEventListener('click', handlePlayerRoll);
+        document.getElementById('restart-btn').addEventListener('click', () => location.reload());
 
-        // Explicitly attach to window scope to avoid click failures
-        window.startGame = function(faction) {
+        function startGame(faction) {
             playerFaction = faction;
             aiFaction = (faction === 'lumin') ? 'nox' : 'lumin';
             
@@ -326,7 +329,7 @@
             if (currentTurn === aiFaction) {
                 startAiTurn();
             }
-        };
+        }
 
         function initBoard() {
             boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -600,7 +603,4 @@
         }
 
         function renderCapturedList(elementId, pool) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = '';
-            pool.forEach(faction => {
-                const mini = document.createElement(
+            const con
